@@ -1,4 +1,4 @@
 node_modules/
 database.sqlite
-public/uploads/*
-!public/uploads/.gitkeep
+.env
+public/uploads/

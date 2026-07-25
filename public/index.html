@@ -42,34 +42,6 @@
         .orb-2 { width: 300px; height: 300px; background: rgba(255, 123, 0, 0.05); bottom: -50px; left: -50px; }
         .container { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 20px; }
 
-        /* Dota Heroes Sidebar */
-        .hero-left, .hero-right {
-            position: fixed;
-            top: 0;
-            width: 180px;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            padding: 100px 0;
-            opacity: 0.18;
-        }
-        .hero-left { left: 0; }
-        .hero-right { right: 0; }
-        .hero {
-            width: 140px;
-            height: 140px;
-            margin: 0 auto;
-            transition: transform 0.1s linear;
-            filter: drop-shadow(0 0 20px var(--orange-glow));
-        }
-        .hero svg { width: 100%; height: 100%; }
-        @media (max-width: 1100px) {
-            .hero-left, .hero-right { display: none; }
-        }
-
         header { text-align: center; padding: 40px 20px; position: relative; }
         .logo-wrapper { display: inline-block; position: relative; }
         .logo-wrapper img {
@@ -127,6 +99,8 @@
         .btn-primary:hover { background: var(--orange-light); box-shadow: 0 0 40px rgba(255, 123, 0, 0.4); }
         .btn-danger { border-color: #ef4444; color: #ef4444; }
         .btn-danger:hover { background: #ef4444; color: white; }
+        .btn-gold { border-color: #fbbf24; color: #fbbf24; }
+        .btn-gold:hover { background: #fbbf24; color: var(--bg-dark); box-shadow: 0 0 30px rgba(251, 191, 36, 0.3); }
         .user-info {
             display: none; align-items: center; gap: 15px;
             background: var(--bg-card); padding: 12px 24px;
@@ -139,6 +113,21 @@
             color: var(--bg-dark); padding: 3px 10px;
             border-radius: 12px; font-size: 0.7rem;
             font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .coins-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.05));
+            border: 1px solid #fbbf24;
+            color: #fbbf24;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .coins-badge::before {
+            content: '🪙';
+            font-size: 1rem;
         }
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0;
@@ -395,12 +384,63 @@
         .badge-admin { background: rgba(255, 123, 0, 0.15); color: var(--orange); border: 1px solid var(--orange); }
         .badge-user { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid var(--text-muted); }
 
+        /* Meme Box */
+        .meme-section {
+            margin: 50px 0;
+            text-align: center;
+        }
+        .meme-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px 30px;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .meme-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+        }
+        .meme-phrase {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            line-height: 1.5;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .meme-hint {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+        .meme-locked {
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 20px;
+        }
+
         @media (max-width: 768px) {
             h1 { font-size: 2rem; }
             .section-title { font-size: 1.5rem; }
             .players-grid { grid-template-columns: 1fr; }
             .modal { padding: 30px 20px; }
             .logo-wrapper img { width: 150px; height: 150px; }
+            .meme-phrase { font-size: 1rem; }
         }
     </style>
 </head>
@@ -408,36 +448,10 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
 
-    <!-- Dota Heroes Sidebar Left -->
-    <div class="hero-left" id="heroLeft">
-        <div class="hero" data-speed="0.3">
-            <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="30" r="18" fill="#ff7b00" opacity="0.8"/><path d="M30 55 Q50 45 70 55 L75 90 Q50 100 25 90 Z" fill="#ff7b00" opacity="0.6"/><path d="M20 35 L35 45 L25 55 Z" fill="#ff9e3d"/><rect x="45" y="48" width="10" height="25" rx="3" fill="#1e293b"/></svg>
-        </div>
-        <div class="hero" data-speed="0.5">
-            <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="28" r="16" fill="#00a8e8" opacity="0.8"/><path d="M35 50 L65 50 L60 85 L40 85 Z" fill="#0088cc" opacity="0.6"/><path d="M30 40 L70 40 L65 50 L35 50 Z" fill="#00a8e8"/><circle cx="42" cy="25" r="3" fill="#1e293b"/><circle cx="58" cy="25" r="3" fill="#1e293b"/></svg>
-        </div>
-        <div class="hero" data-speed="0.2">
-            <svg viewBox="0 0 100 100" fill="none"><path d="M50 15 L65 40 L55 40 L55 85 L45 85 L45 40 L35 40 Z" fill="#22c55e" opacity="0.7"/><circle cx="50" cy="25" r="12" fill="#4ade80" opacity="0.6"/></svg>
-        </div>
-    </div>
-
-    <!-- Dota Heroes Sidebar Right -->
-    <div class="hero-right" id="heroRight">
-        <div class="hero" data-speed="0.4">
-            <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="30" r="18" fill="#ef4444" opacity="0.8"/><path d="M25 55 Q50 40 75 55 L80 90 Q50 100 20 90 Z" fill="#dc2626" opacity="0.6"/><path d="M35 30 L25 15 L40 25 Z" fill="#fca5a5"/><path d="M65 30 L75 15 L60 25 Z" fill="#fca5a5"/></svg>
-        </div>
-        <div class="hero" data-speed="0.6">
-            <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="28" r="16" fill="#a855f7" opacity="0.8"/><path d="M30 50 L70 50 L65 88 L35 88 Z" fill="#7c3aed" opacity="0.6"/><path d="M40 20 L60 20 L55 35 L45 35 Z" fill="#a855f7"/><circle cx="45" cy="26" r="2" fill="#1e293b"/><circle cx="55" cy="26" r="2" fill="#1e293b"/></svg>
-        </div>
-        <div class="hero" data-speed="0.3">
-            <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="30" r="17" fill="#f59e0b" opacity="0.8"/><path d="M32 52 L68 52 L62 88 L38 88 Z" fill="#d97706" opacity="0.6"/><path d="M30 35 L40 45 L30 50 Z" fill="#fbbf24"/><path d="M70 35 L60 45 L70 50 Z" fill="#fbbf24"/></svg>
-        </div>
-    </div>
-
     <div class="container">
         <header>
             <div class="logo-wrapper">
-                <img src="balabob_logo.jpg" alt="BALABOB TEAM Logo">
+                <img src="/balabob_logo.jpg" alt="BALABOB TEAM Logo">
             </div>
             <h1>BALABOB TEAM</h1>
             <p class="subtitle">Молодая и талантливая команда Dota 2 из Украины</p>
@@ -452,6 +466,7 @@
         <div class="user-info" id="userInfo">
             <span id="userNameDisplay"></span>
             <span class="admin-badge" id="adminBadge" style="display:none;">ADMIN</span>
+            <span class="coins-badge" id="coinsDisplay" style="display:none;">0</span>
             <button class="btn" style="padding: 8px 20px; font-size: 0.75rem;" onclick="openUsersPanel()">Пользователи</button>
             <button class="btn" style="padding: 8px 20px; font-size: 0.75rem;" onclick="openApplicationsPanel()">Заявки</button>
             <button class="btn" style="padding: 8px 20px; font-size: 0.75rem;" onclick="logout()">Выйти</button>
@@ -461,6 +476,23 @@
             <h2 class="section-title">Состав команды</h2>
             <div class="loading" id="loading">Загрузка состава...</div>
             <div class="players-grid" id="playersGrid" style="display:none;"></div>
+        </section>
+
+        <!-- Meme Phrase Section -->
+        <section class="meme-section" id="memeSection">
+            <h2 class="section-title">Мемная фраза</h2>
+            <div class="meme-box" id="memeBox">
+                <div class="meme-phrase" id="memePhrase">Нажми кнопку и узнай свою судьбу...</div>
+                <div id="memeButtons">
+                    <button class="btn btn-gold" id="spendCoinBtn" onclick="spendCoin()" style="display:none;">
+                        🪙 Открыть фразу (10 монеток)
+                    </button>
+                    <button class="btn btn-primary" id="refillCoinsBtn" onclick="refillCoins()" style="display:none;">
+                        ✨ Получить +100 монеток
+                    </button>
+                </div>
+                <div class="meme-hint" id="memeHint"></div>
+            </div>
         </section>
 
         <!-- Admin: Users Panel -->
@@ -620,6 +652,7 @@
 
     <script>
         let currentUser = null;
+        let userCoins = 0;
         let editingSlot = null;
         let playersData = [];
         let uploadedPhotoUrl = '';
@@ -641,9 +674,11 @@
                 const session = await api('/api/session');
                 if (session.loggedIn) {
                     currentUser = { username: session.username, role: session.role };
+                    userCoins = session.coins || 0;
                     showUser();
                 }
             } catch (e) {}
+            updateMemeUI();
             await loadPlayers();
             await loadComments();
         }
@@ -682,8 +717,10 @@
             try {
                 const data = await api('/api/register', { method: 'POST', body: { username, password } });
                 currentUser = { username: data.username, role: data.role };
+                userCoins = data.coins || 100;
                 closeModal('registerModal');
                 showUser();
+                updateMemeUI();
                 await loadPlayers();
             } catch (e) { errorEl.textContent = e.message; errorEl.style.display = 'block'; }
         }
@@ -695,8 +732,10 @@
             try {
                 const data = await api('/api/login', { method: 'POST', body: { username, password } });
                 currentUser = { username: data.username, role: data.role };
+                userCoins = data.coins || 0;
                 closeModal('loginModal');
                 showUser();
+                updateMemeUI();
                 await loadPlayers();
             } catch (e) { errorEl.textContent = e.message; errorEl.style.display = 'block'; }
         }
@@ -704,10 +743,12 @@
         async function logout() {
             try { await api('/api/logout', { method: 'POST' }); } catch (e) {}
             currentUser = null;
+            userCoins = 0;
             document.getElementById('authSection').style.display = 'flex';
             document.getElementById('userInfo').style.display = 'none';
             document.getElementById('usersPanel').classList.remove('active');
             document.getElementById('applicationsPanel').classList.remove('active');
+            updateMemeUI();
             await loadPlayers();
         }
 
@@ -716,6 +757,59 @@
             document.getElementById('userInfo').style.display = 'flex';
             document.getElementById('userNameDisplay').textContent = currentUser.username;
             document.getElementById('adminBadge').style.display = isAdmin() ? 'inline-block' : 'none';
+            document.getElementById('coinsDisplay').style.display = 'inline-flex';
+            document.getElementById('coinsDisplay').textContent = userCoins;
+        }
+
+        function updateMemeUI() {
+            const phraseEl = document.getElementById('memePhrase');
+            const spendBtn = document.getElementById('spendCoinBtn');
+            const refillBtn = document.getElementById('refillCoinsBtn');
+            const hint = document.getElementById('memeHint');
+
+            if (!currentUser) {
+                phraseEl.textContent = '🔒 Войди или зарегистрируйся, чтобы открывать мемные фразы!';
+                spendBtn.style.display = 'none';
+                refillBtn.style.display = 'none';
+                hint.textContent = 'За регистрацию получишь 100 монеток 🪙';
+                return;
+            }
+
+            if (userCoins >= 10) {
+                spendBtn.style.display = 'inline-block';
+                refillBtn.style.display = 'none';
+                hint.textContent = `У тебя ${userCoins} монеток. Каждая фраза стоит 10 🪙`;
+            } else {
+                spendBtn.style.display = 'none';
+                refillBtn.style.display = 'inline-block';
+                hint.textContent = 'Монетки закончились! Нажми кнопку ниже, чтобы получить ещё 100 🪙';
+            }
+        }
+
+        async function spendCoin() {
+            if (!currentUser) { alert('Сначала войди в аккаунт'); return; }
+            if (userCoins < 10) { alert('Недостаточно монеток'); return; }
+            try {
+                const data = await api('/api/spend-coin', { method: 'POST' });
+                userCoins = data.remainingCoins;
+                document.getElementById('coinsDisplay').textContent = userCoins;
+                const phraseEl = document.getElementById('memePhrase');
+                phraseEl.style.animation = 'none';
+                phraseEl.offsetHeight; // trigger reflow
+                phraseEl.textContent = data.phrase;
+                phraseEl.style.animation = 'fadeIn 0.5s ease';
+                updateMemeUI();
+            } catch (e) { alert('Ошибка: ' + e.message); }
+        }
+
+        async function refillCoins() {
+            if (!currentUser) return;
+            try {
+                const data = await api('/api/refill-coins', { method: 'POST' });
+                userCoins = data.coins;
+                document.getElementById('coinsDisplay').textContent = userCoins;
+                updateMemeUI();
+            } catch (e) { alert('Ошибка: ' + e.message); }
         }
 
         function renderPlayers() {
@@ -870,12 +964,13 @@
                 const container = document.getElementById('usersTableContainer');
                 container.innerHTML = `
                     <table class="admin-table">
-                        <thead><tr><th>ID</th><th>Ник</th><th>Роль</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Ник</th><th>Роль</th><th>Монетки</th></tr></thead>
                         <tbody>${users.map(u => `
                             <tr>
                                 <td>${u.id}</td>
                                 <td>${escapeHtml(u.username)}</td>
                                 <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
+                                <td>${u.coins}</td>
                             </tr>
                         `).join('')}</tbody>
                     </table>
@@ -937,15 +1032,6 @@
             const d = new Date(dateStr);
             return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
-
-        // ========== PARALLAX HEROES ==========
-        window.addEventListener('scroll', () => {
-            const scrollY = window.scrollY;
-            document.querySelectorAll('.hero').forEach(hero => {
-                const speed = parseFloat(hero.dataset.speed) || 0.3;
-                hero.style.transform = `translateY(${scrollY * speed}px)`;
-            });
-        });
 
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });

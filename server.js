@@ -40,13 +40,26 @@ app.use(session({
 const dbPath = path.join(__dirname, 'database.sqlite');
 const db = new Database(dbPath);
 
-db.exec(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'user')`);
+db.exec(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT DEFAULT 'user',
+    coins INTEGER DEFAULT 0
+)`);
+
+// Migration: add coins column if missing
+try {
+    db.prepare(`SELECT coins FROM users LIMIT 1`).get();
+} catch (e) {
+    db.exec(`ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0`);
+}
 db.exec(`CREATE TABLE IF NOT EXISTS players (id INTEGER PRIMARY KEY, slot INTEGER UNIQUE, name TEXT, position TEXT, mmr INTEGER DEFAULT 0, photo TEXT)`);
 db.exec(`CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY, name TEXT, text TEXT, created_at TEXT DEFAULT (datetime('now')))`);
 db.exec(`CREATE TABLE IF NOT EXISTS applications (id INTEGER PRIMARY KEY, name TEXT, email TEXT, position TEXT, mmr INTEGER, message TEXT, created_at TEXT DEFAULT (datetime('now')))`);
 
 const adminHash = bcrypt.hashSync('penishole', 10);
-db.prepare(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`).run('hoorma', adminHash, 'admin');
+db.prepare(`INSERT OR IGNORE INTO users (username, password, role, coins) VALUES (?, ?, ?, ?)`).run('hoorma', adminHash, 'admin', 9999);
 
 const defaultPlayers = [
     [1, 'Игрок 1', 'Carry (1)', 8000, ''],
@@ -67,6 +80,30 @@ function requireAdmin(req, res, next) {
     next();
 }
 
+// ========== MEME PHRASES ==========
+const MEME_PHRASES = [
+    "Балабобы вперёд!",
+    "Hello Balabob Team I am Son of The Balabob and I wish you will win the next International",
+    "Сегодня мы не лузаем, сегодня мы БАЛАБОБИМ!",
+    "MMR — это просто цифра. Главное — быть Балабобом в душе.",
+    "Я не тильтую, я просто эмоционально инвестирую в игру.",
+    "Балабоб никогда не фидит. Он просто раздаёт фарм врагам.",
+    "Если ты не Балабоб, то кто ты вообще такой?",
+    "Смоки? Нет, мы идём в лицо. Мы же Балабобы.",
+    "Я родился, чтобы нажимать крипов и кричать 'Балабоб!'",
+    "Teamfight? Нет, это Балабоб-файт.",
+    "Рошан боится нас. Мы боимся только отсутствия маны.",
+    "Саппортить — это искусство. Балабобить — это призвание.",
+    "Я не мидер, я Балабоб-центр вселенной.",
+    "GG? Нет. BB — Balabob Back.",
+    "Мы не ливаем, мы делаем стратегический перерыв на 30 секунд.",
+    "Балабоб не проигрывает. Он просто отдаёт победу врагу, чтобы было интереснее.",
+    "Ты либо Балабоб, либо никто.",
+    "Я не фармлю лес, я собираю Балабоб-ресурсы.",
+    "Связка? Нет, у нас Балабоб-синергия.",
+    "Мы не команда. Мы — Балабоб-семья."
+];
+
 // ========== AUTH ==========
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
@@ -74,11 +111,13 @@ app.post('/api/register', (req, res) => {
     if (password.length < 6) return res.status(400).json({ error: 'Пароль минимум 6 символов' });
     if (username.toLowerCase() === 'hoorma') return res.status(400).json({ error: 'Ник зарезервирован' });
     try {
-        const info = db.prepare(`INSERT INTO users (username, password, role) VALUES (?, ?, 'user')`).run(username, bcrypt.hashSync(password, 10));
+        const info = db.prepare(`INSERT INTO users (username, password, role, coins) VALUES (?, ?, 'user', 100)`)
+            .run(username, bcrypt.hashSync(password, 10));
         req.session.userId = info.lastInsertRowid;
         req.session.username = username;
         req.session.role = 'user';
-        res.json({ success: true, username, role: 'user' });
+        req.session.coins = 100;
+        res.json({ success: true, username, role: 'user', coins: 100 });
     } catch (e) {
         res.status(400).json({ error: e.message.includes('UNIQUE') ? 'Пользователь уже есть' : 'Ошибка сервера' });
     }
@@ -93,11 +132,41 @@ app.post('/api/login', (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
     req.session.role = user.role;
-    res.json({ success: true, username: user.username, role: user.role });
+    req.session.coins = user.coins;
+    res.json({ success: true, username: user.username, role: user.role, coins: user.coins });
 });
 
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
-app.get('/api/session', (req, res) => res.json(req.session.userId ? { loggedIn: true, username: req.session.username, role: req.session.role } : { loggedIn: false }));
+app.get('/api/session', (req, res) => {
+    if (!req.session.userId) return res.json({ loggedIn: false });
+    const user = db.prepare(`SELECT coins FROM users WHERE id = ?`).get(req.session.userId);
+    res.json({
+        loggedIn: true,
+        username: req.session.username,
+        role: req.session.role,
+        coins: user ? user.coins : 0
+    });
+});
+
+// ========== COINS ==========
+app.get('/api/coins', requireAuth, (req, res) => {
+    const user = db.prepare(`SELECT coins FROM users WHERE id = ?`).get(req.session.userId);
+    res.json({ coins: user ? user.coins : 0 });
+});
+
+app.post('/api/spend-coin', requireAuth, (req, res) => {
+    const user = db.prepare(`SELECT coins FROM users WHERE id = ?`).get(req.session.userId);
+    if (!user || user.coins < 10) return res.status(400).json({ error: 'Недостаточно монеток' });
+    db.prepare(`UPDATE users SET coins = coins - 10 WHERE id = ?`).run(req.session.userId);
+    const phrase = MEME_PHRASES[Math.floor(Math.random() * MEME_PHRASES.length)];
+    res.json({ success: true, phrase, remainingCoins: user.coins - 10 });
+});
+
+app.post('/api/refill-coins', requireAuth, (req, res) => {
+    db.prepare(`UPDATE users SET coins = coins + 100 WHERE id = ?`).run(req.session.userId);
+    const user = db.prepare(`SELECT coins FROM users WHERE id = ?`).get(req.session.userId);
+    res.json({ success: true, coins: user.coins });
+});
 
 // ========== PLAYERS ==========
 app.get('/api/players', (req, res) => res.json(db.prepare(`SELECT * FROM players ORDER BY slot ASC`).all()));
@@ -112,7 +181,7 @@ app.put('/api/players/:slot', requireAdmin, (req, res) => {
 
 // ========== USERS (admin only) ==========
 app.get('/api/users', requireAdmin, (req, res) => {
-    const rows = db.prepare(`SELECT id, username, role, created_at FROM users ORDER BY id DESC`).all();
+    const rows = db.prepare(`SELECT id, username, role, coins, created_at FROM users ORDER BY id DESC`).all();
     res.json(rows);
 });
 
